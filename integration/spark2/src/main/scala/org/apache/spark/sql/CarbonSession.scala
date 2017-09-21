@@ -21,16 +21,21 @@ import java.io.File
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
+import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.streaming.CarbonStreamingQueryListener
 import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
 import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
+import org.apache.carbondata.events._
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 
 /**
  * Session implementation for {org.apache.spark.sql.SparkSession}
@@ -69,6 +74,10 @@ class CarbonSession(@transient val sc: SparkContext,
 
   override def newSession(): SparkSession = {
     new CarbonSession(sparkContext, Some(sharedState))
+  }
+
+  if (existingSharedState.isEmpty) {
+    CarbonSession.initListeners()
   }
 
 }
@@ -152,6 +161,7 @@ object CarbonSession {
             sparkConf.setAppName(randomAppName)
           }
           val sc = SparkContext.getOrCreate(sparkConf)
+          setS3Configurations(sc)
           // maybe this is an existing SparkContext, update its SparkConf which maybe used
           // by SparkSession
           options.foreach { case (k, v) => sc.conf.set(k, v) }
@@ -214,31 +224,17 @@ object CarbonSession {
     ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
   }
 
-
-  def threadSet(key: String, value: Object): Unit = {
-    var currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-    if (currentThreadSessionInfo == null) {
-      currentThreadSessionInfo = new CarbonSessionInfo()
-    }
-    else {
-      currentThreadSessionInfo = currentThreadSessionInfo.clone()
-    }
-    currentThreadSessionInfo.getThreadParams.setExtraInfo(key, value)
-    ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
-  }
-
   def threadUnset(key: String): Unit = {
     val currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (currentThreadSessionInfo != null) {
       val currentThreadSessionInfoClone = currentThreadSessionInfo.clone()
       val threadParams = currentThreadSessionInfoClone.getThreadParams
       CarbonSetCommand.unsetValue(threadParams, key)
-      threadParams.removeExtraInfo(key)
       ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfoClone)
     }
   }
 
-  def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
+  private[spark] def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
     val carbonSessionInfo = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.clone()
     val currentThreadSessionInfoOrig = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (currentThreadSessionInfoOrig != null) {
@@ -252,4 +248,37 @@ object CarbonSession {
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
   }
 
+  def initListeners(): Unit = {
+    OperationListenerBus.getInstance()
+      .addListener(classOf[LoadTablePreStatusUpdateEvent], LoadPostAggregateListener)
+      .addListener(classOf[DeleteSegmentByIdPreEvent], PreAggregateDeleteSegmentByIdPreListener)
+      .addListener(classOf[DeleteSegmentByDatePreEvent], PreAggregateDeleteSegmentByDatePreListener)
+      .addListener(classOf[UpdateTablePreEvent], UpdatePreAggregatePreListener)
+      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
+      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
+      .addListener(classOf[AlterTableDropColumnPreEvent], PreAggregateDropColumnPreListener)
+      .addListener(classOf[AlterTableRenamePreEvent], PreAggregateRenameTablePreListener)
+      .addListener(classOf[AlterTableDataTypeChangePreEvent], PreAggregateDataTypeChangePreListener)
+      .addListener(classOf[AlterTableAddColumnPreEvent], PreAggregateAddColumnsPreListener)
+      .addListener(classOf[LoadTablePreExecutionEvent], LoadPreAggregateTablePreListener)
+      .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
+        AlterPreAggregateTableCompactionPostListener)
+  }
+
+  private def setS3Configurations(sparkContext: SparkContext): Unit = {
+    FileFactory.getConfiguration
+      .set(ACCESS_KEY, sparkContext.hadoopConfiguration.get(ACCESS_KEY, ""))
+    FileFactory.getConfiguration
+      .set(SECRET_KEY, sparkContext.hadoopConfiguration.get(SECRET_KEY, ""))
+   FileFactory.getConfiguration
+      .set(ENDPOINT, sparkContext.hadoopConfiguration.get(ENDPOINT, ""))
+    FileFactory.getConfiguration.set(CarbonCommonConstants.S3_ACCESS_KEY,
+      sparkContext.hadoopConfiguration.get(CarbonCommonConstants.S3_ACCESS_KEY, ""))
+    FileFactory.getConfiguration.set(CarbonCommonConstants.S3_SECRET_KEY,
+      sparkContext.hadoopConfiguration.get(CarbonCommonConstants.S3_SECRET_KEY, ""))
+    FileFactory.getConfiguration.set(CarbonCommonConstants.S3N_ACCESS_KEY,
+      sparkContext.hadoopConfiguration.get(CarbonCommonConstants.S3N_ACCESS_KEY, ""))
+    FileFactory.getConfiguration.set(CarbonCommonConstants.S3N_SECRET_KEY,
+      sparkContext.hadoopConfiguration.get(CarbonCommonConstants.S3N_SECRET_KEY, ""))
+  }
 }
