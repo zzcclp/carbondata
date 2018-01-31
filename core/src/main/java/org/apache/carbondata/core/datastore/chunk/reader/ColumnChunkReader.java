@@ -14,10 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.stats;
 
-import java.io.Serializable;
+package org.apache.carbondata.core.datastore.chunk.reader;
 
-public class PartitionStatistic implements Serializable {
+public abstract class ColumnChunkReader {
+  /**
+   * file path from which blocks will be read
+   */
+  protected String filePath;
 
+  /**
+   * number of rows for blocklet
+   */
+  protected int numberOfRows;
+
+  public ColumnChunkReader(String filePath, int numberOfRows) {
+    this.filePath = filePath;
+    this.numberOfRows = numberOfRows;
+  }
 }

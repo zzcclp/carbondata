@@ -211,16 +211,14 @@ object CarbonSession {
     }
   }
 
-  def threadSet(key: String, value: String): Unit = {
+  def threadSet(key: String, value: Object): Unit = {
     var currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (currentThreadSessionInfo == null) {
       currentThreadSessionInfo = new CarbonSessionInfo()
-    }
-    else {
+    } else {
       currentThreadSessionInfo = currentThreadSessionInfo.clone()
     }
-    val threadParams = currentThreadSessionInfo.getThreadParams
-    CarbonSetCommand.validateAndSetValue(threadParams, key, value)
+    currentThreadSessionInfo.getThreadParams.setExtraInfo(key, value)
     ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
   }
 
@@ -234,7 +232,7 @@ object CarbonSession {
     }
   }
 
-  private[spark] def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
+  def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
     val carbonSessionInfo = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.clone()
     val currentThreadSessionInfoOrig = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (currentThreadSessionInfoOrig != null) {

@@ -18,8 +18,8 @@ package org.apache.carbondata.core.datastore.chunk.reader;
 
 import java.io.IOException;
 
-import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.memory.MemoryException;
 
@@ -37,7 +37,7 @@ public interface DimensionColumnChunkReader {
    * @param blockletIndexes blocklets to be read
    * @return dimension column chunks
    */
-  DimensionRawColumnChunk[] readRawDimensionChunks(FileHolder fileReader, int[][] blockletIndexes)
+  DimensionRawColumnChunk[] readRawDimensionChunks(FileReader fileReader, int[][] blockletIndexes)
       throws IOException;
 
   /**
@@ -47,7 +47,7 @@ public interface DimensionColumnChunkReader {
    * @param blockletIndex block to be read
    * @return dimension column chunk
    */
-  DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader, int blockletIndex)
+  DimensionRawColumnChunk readRawDimensionChunk(FileReader fileReader, int blockletIndex)
       throws IOException;
 
   /**
@@ -58,6 +58,6 @@ public interface DimensionColumnChunkReader {
    * @return
    * @throws IOException
    */
-  DimensionColumnDataChunk convertToDimensionChunk(DimensionRawColumnChunk dimensionRawColumnChunk,
+  DimensionColumnPage decodeColumnPage(DimensionRawColumnChunk dimensionRawColumnChunk,
       int pageNumber) throws IOException, MemoryException;
 }

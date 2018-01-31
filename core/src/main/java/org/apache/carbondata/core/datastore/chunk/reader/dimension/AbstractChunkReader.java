@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.datastore.chunk.reader.dimension;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.chunk.reader.ColumnChunkReader;
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -27,7 +28,8 @@ import org.apache.carbondata.core.util.CarbonProperties;
  * Class which will have all the common properties and behavior among all type
  * of reader
  */
-public abstract class AbstractChunkReader implements DimensionColumnChunkReader {
+public abstract class AbstractChunkReader extends ColumnChunkReader implements
+    DimensionColumnChunkReader {
 
   /**
    * compressor will be used to uncompress the data
@@ -41,21 +43,10 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
   protected int[] eachColumnValueSize;
 
   /**
-   * full qualified path of the data file from
-   * which data will be read
-   */
-  protected String filePath;
-
-  /**
    * this will be used to uncompress the
    * row id and rle chunk
    */
   protected NumberCompressor numberComressor;
-
-  /**
-   * number of element in each chunk
-   */
-  protected int numberOfRows;
 
   /**
    * Constructor to get minimum parameter to create
@@ -66,8 +57,8 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
    */
   public AbstractChunkReader(final int[] eachColumnValueSize, final String filePath,
       int numberOfRows) {
+    super(filePath, numberOfRows);
     this.eachColumnValueSize = eachColumnValueSize;
-    this.filePath = filePath;
     int numberOfElement = 0;
     try {
       numberOfElement = Integer.parseInt(CarbonProperties.getInstance()
@@ -77,7 +68,6 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
       numberOfElement = Integer.parseInt(CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
     }
     this.numberComressor = new NumberCompressor(numberOfElement);
-    this.numberOfRows = numberOfRows;
   }
 
   /**

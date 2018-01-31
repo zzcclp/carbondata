@@ -18,7 +18,7 @@ package org.apache.carbondata.core.datastore.chunk.reader;
 
 import java.io.IOException;
 
-import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -35,7 +35,7 @@ public interface MeasureColumnChunkReader {
    * @param blockIndexes blocks to be read
    * @return measure data chunks
    */
-  MeasureRawColumnChunk[] readRawMeasureChunks(FileHolder fileReader, int[][] blockIndexes)
+  MeasureRawColumnChunk[] readRawMeasureChunks(FileReader fileReader, int[][] blockIndexes)
       throws IOException;
 
   /**
@@ -45,17 +45,17 @@ public interface MeasureColumnChunkReader {
    * @param blockIndex block to be read
    * @return measure data chunk
    */
-  MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int blockIndex)
+  MeasureRawColumnChunk readRawMeasureChunk(FileReader fileReader, int blockIndex)
       throws IOException;
 
   /**
-   * Covert raw data to measure chunk
+   * decode raw data to column page
    * @param measureRawColumnChunk
    * @param pageNumber
    * @return
    * @throws IOException
    */
-  ColumnPage convertToColumnPage(MeasureRawColumnChunk measureRawColumnChunk,
+  ColumnPage decodeColumnPage(MeasureRawColumnChunk measureRawColumnChunk,
       int pageNumber) throws IOException, MemoryException;
 
 }

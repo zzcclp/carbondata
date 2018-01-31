@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.datastore.chunk.reader.measure;
 
+import org.apache.carbondata.core.datastore.chunk.reader.ColumnChunkReader;
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
@@ -23,19 +24,10 @@ import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
 /**
  * Measure block reader abstract class
  */
-public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkReader {
+public abstract class AbstractMeasureChunkReader extends ColumnChunkReader
+    implements MeasureColumnChunkReader {
 
   protected EncodingFactory encodingFactory = DefaultEncodingFactory.getInstance();
-
-  /**
-   * file path from which blocks will be read
-   */
-  protected String filePath;
-
-  /**
-   * number of rows for blocklet
-   */
-  protected int numberOfRows;
 
   /**
    * Constructor to get minimum parameter to create instance of this class
@@ -43,7 +35,7 @@ public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkRe
    * @param filePath file from which data will be read
    */
   public AbstractMeasureChunkReader(String filePath, int numberOfRows) {
-    this.filePath = filePath;
-    this.numberOfRows = numberOfRows;
+    super(filePath, numberOfRows);
   }
+
 }
