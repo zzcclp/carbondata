@@ -16,3 +16,8 @@ target/
 .classpath
 metastore_db/
 derby.log
+
+*/.cache-main
+*/.cache-tests
+*/*/.cache-main
+*/*/.cache-tests
