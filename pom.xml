@@ -131,6 +131,17 @@
         <enabled>true</enabled>
       </releases>
     </repository>
+    <repository>
+      <id>cloudera-repo</id>
+      <name>Cloudera Repository</name>
+      <url>https://repository.cloudera.com/artifactory/cloudera-repos</url>
+      <releases>
+         <enabled>true</enabled>
+      </releases>
+      <snapshots>
+         <enabled>false</enabled>
+      </snapshots>
+    </repository>
   </repositories>
 
   <dependencyManagement>
@@ -524,7 +535,6 @@
       <modules>
         <module>integration/spark2</module>
         <module>integration/hive</module>
-        <module>integration/presto</module>
         <module>streaming</module>
         <module>examples/spark2</module>
       </modules>
