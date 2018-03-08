@@ -113,6 +113,7 @@ object AlterTableUtil {
     val lockLocation = tablePath
     locks.zip(locksAcquired).foreach { case (carbonLock, lockType) =>
       val lockFilePath = lockLocation + CarbonCommonConstants.FILE_SEPARATOR +
+                         LockUsage.LOCK_DIR + CarbonCommonConstants.FILE_SEPARATOR +
                          lockType
       if (carbonLock.releaseLockManually(lockFilePath)) {
         LOGGER.info(s"Alter table lock released successfully: ${ lockType }")
