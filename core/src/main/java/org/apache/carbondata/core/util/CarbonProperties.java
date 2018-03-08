@@ -1380,13 +1380,13 @@ public final class CarbonProperties {
       int preserveHours = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS,
               CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS_DEFAULT));
-      preserveSeconds = preserveHours * 3600 * 1000l;
+      preserveSeconds = preserveHours * 3600 * 1000L;
     } catch (NumberFormatException exc) {
       LOGGER.error(
           "The segment lock files preserv hours is invalid. Using the default value "
               + CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS_DEFAULT);
       preserveSeconds = Integer.parseInt(
-          CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS_DEFAULT) * 3600 * 1000l;
+          CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS_DEFAULT) * 3600 * 1000L;
     }
     return preserveSeconds;
   }
