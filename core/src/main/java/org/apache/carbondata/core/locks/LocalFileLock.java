@@ -74,7 +74,7 @@ public class LocalFileLock extends AbstractCarbonLock {
    * @param lockFile
    */
   public LocalFileLock(String lockFileLocation, String lockFile) {
-    this.location = lockFileLocation;
+    this.location = lockFileLocation + CarbonCommonConstants.FILE_SEPARATOR + LockUsage.LOCK_DIR;
     this.lockFile = lockFile;
     initRetry();
   }

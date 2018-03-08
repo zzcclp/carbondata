@@ -88,12 +88,12 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
    */
   public ZooKeeperLocking(String lockLocation, String lockFile) {
     this.lockName = lockFile;
-    this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockLocation;
+    this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockLocation
+        + CarbonCommonConstants.FILE_SEPARATOR + LockUsage.LOCK_DIR;
 
     initialize();
 
-    this.lockTypeFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockLocation
-        + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
+    this.lockTypeFolder = tableIdFolder + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
     try {
       createBaseNode();
       // if exists returns null then path doesnt exist. so creating.

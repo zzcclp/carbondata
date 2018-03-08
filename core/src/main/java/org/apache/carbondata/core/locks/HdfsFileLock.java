@@ -28,7 +28,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 
 /**
  * This class is used to handle the HDFS File locking.
- * This is acheived using the concept of acquiring the data out stream using Append option.
+ * This is achieved using the concept of acquiring the data out stream using Append option.
  */
 public class HdfsFileLock extends AbstractCarbonLock {
 
@@ -39,16 +39,18 @@ public class HdfsFileLock extends AbstractCarbonLock {
    */
   private String location;
 
-  private DataOutputStream dataOutputStream;
+  private String locationPath;
 
-  private static String tmpPath;
+  private DataOutputStream dataOutputStream;
 
   /**
    * @param lockFileLocation
    * @param lockFile
    */
   public HdfsFileLock(String lockFileLocation, String lockFile) {
-    this.location = lockFileLocation
+    this.locationPath = lockFileLocation
+        + CarbonCommonConstants.FILE_SEPARATOR + LockUsage.LOCK_DIR;
+    this.location = this.locationPath
         + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
     LOGGER.info("HDFS lock path:" + this.location);
     initRetry();
@@ -75,6 +77,10 @@ public class HdfsFileLock extends AbstractCarbonLock {
    */
   @Override public boolean lock() {
     try {
+      if (null != this.locationPath &&
+          !FileFactory.isFileExist(locationPath, FileFactory.getFileType(locationPath))) {
+        FileFactory.mkdirs(locationPath, FileFactory.getFileType(locationPath));
+      }
       if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
         FileFactory.createNewLockFile(location, FileFactory.getFileType(location));
       }
