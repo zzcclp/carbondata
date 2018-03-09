@@ -189,9 +189,9 @@ public class UnsafeSortDataRows {
           dataSorterAndWriterExecutorService.execute(new DataSorterAndWriter(rowPage));
           MemoryBlock memoryBlock =
               UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
-          boolean saveToDisk =
+          boolean isMemoryAvailable =
               UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(memoryBlock.size());
-          if (!saveToDisk) {
+          if (isMemoryAvailable) {
             UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(memoryBlock.size());
           }
           rowPage = new UnsafeCarbonRowPage(
@@ -201,7 +201,7 @@ public class UnsafeSortDataRows {
                   parameters.getMeasureColCount(),
                   parameters.getMeasureDataType(),
                   memoryBlock,
-                  saveToDisk, taskId);
+                  !isMemoryAvailable, taskId);
           bytesAdded += rowPage.addRow(rowBatch[i]);
         } catch (Exception e) {
           LOGGER.error(
@@ -231,8 +231,8 @@ public class UnsafeSortDataRows {
         dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
         MemoryBlock memoryBlock =
             UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
-        boolean saveToDisk = UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(memoryBlock.size());
-        if (!saveToDisk) {
+        boolean isMemoryAvailable = UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(memoryBlock.size());
+        if (isMemoryAvailable) {
           UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(memoryBlock.size());
         }
         rowPage = new UnsafeCarbonRowPage(
@@ -240,7 +240,7 @@ public class UnsafeSortDataRows {
             parameters.getNoDictionarySortColumn(),
             parameters.getDimColCount(), parameters.getMeasureColCount(),
             parameters.getMeasureDataType(), memoryBlock,
-            saveToDisk, taskId);
+            !isMemoryAvailable, taskId);
         rowPage.addRow(row);
       } catch (Exception e) {
         LOGGER.error(
