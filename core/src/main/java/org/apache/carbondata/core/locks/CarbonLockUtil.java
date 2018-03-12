@@ -19,7 +19,6 @@ package org.apache.carbondata.core.locks;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -134,9 +133,8 @@ public class CarbonLockUtil {
             SegmentStatus.LOAD_PARTIAL_SUCCESS == oneRow.getSegmentStatus() ||
             SegmentStatus.COMPACTED == oneRow.getSegmentStatus()) {
           String location = CarbonTablePath
-              .getLockFilesDirPath(absoluteTableIdentifier.getTablePath()) +
-              CarbonCommonConstants.FILE_SEPARATOR +
-              CarbonTablePath.addSegmentPrefix(oneRow.getLoadName()) + LockUsage.LOCK;
+              .getSegmentLockFilePath(absoluteTableIdentifier.getTablePath(),
+                  oneRow.getLoadName());
           CarbonFile carbonFile =
               FileFactory.getCarbonFile(location, FileFactory.getFileType(location));
           if (carbonFile.exists()) {

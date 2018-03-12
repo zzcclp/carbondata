@@ -22,8 +22,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+
 import org.apache.hadoop.fs.Path;
 
 
@@ -768,5 +770,20 @@ public class CarbonTablePath extends Path {
    */
   public static String getLockFilesDirPath(String tablePath) {
     return tablePath + CarbonCommonConstants.FILE_SEPARATOR + LOCK_DIR;
+  }
+
+  /**
+   * Get the lock file
+   */
+  public static String getLockFilePath(String tablePath, String lockType) {
+    return getLockFilesDirPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + lockType;
+  }
+
+  /**
+   * Get the segment lock file according to table path and segment load name
+   */
+  public static String getSegmentLockFilePath(String tablePath, String loadName) {
+    return getLockFilesDirPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR +
+        addSegmentPrefix(loadName) + LockUsage.LOCK;
   }
 }
