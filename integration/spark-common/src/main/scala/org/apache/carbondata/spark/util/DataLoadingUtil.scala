@@ -44,15 +44,12 @@ import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
@@ -357,39 +354,6 @@ object DataLoadingUtil {
     }
   }
 
-  /**
-   * Currently the segment lock files are not deleted immediately when unlock,
-   * so it needs to delete expired lock files before delete loads.
-   */
-  private def deleteExpiredSegmentLockFiles(carbonTable: CarbonTable): Unit = {
-    val details = SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath)
-    if (details != null && details.nonEmpty) {
-      val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-      val segmentLockFilesPreservTime =
-        CarbonProperties.getInstance.getSegmentLockFilesPreserveHours()
-      val currTime = System.currentTimeMillis()
-      for (oneRow <- details) {
-        if (oneRow.getVisibility.equalsIgnoreCase("false") ||
-            SegmentStatus.SUCCESS == oneRow.getSegmentStatus ||
-            SegmentStatus.LOAD_FAILURE == oneRow.getSegmentStatus ||
-            SegmentStatus.LOAD_PARTIAL_SUCCESS == oneRow.getSegmentStatus ||
-            SegmentStatus.COMPACTED == oneRow.getSegmentStatus) {
-          val location = absoluteTableIdentifier.getTablePath() +
-            CarbonCommonConstants.FILE_SEPARATOR + LockUsage.LOCK_DIR +
-            CarbonCommonConstants.FILE_SEPARATOR +
-            CarbonTablePath.addSegmentPrefix(oneRow.getLoadName) + LockUsage.LOCK;
-          val carbonFile: CarbonFile =
-            FileFactory.getCarbonFile(location, FileFactory.getFileType(location))
-          if (carbonFile.exists()) {
-            if ((currTime - carbonFile.getLastModifiedTime) > segmentLockFilesPreservTime) {
-              carbonFile.delete()
-            }
-          }
-        }
-      }
-    }
-  }
-
   private def isLoadDeletionRequired(metaDataLocation: String): Boolean = {
     val details = SegmentStatusManager.readLoadMetadata(metaDataLocation)
     if (details != null && details.nonEmpty) for (oneRow <- details) {
@@ -408,8 +372,6 @@ object DataLoadingUtil {
       isForceDeletion: Boolean,
       carbonTable: CarbonTable,
       specs: util.List[PartitionSpec]): Unit = {
-    // delete expired segment lock files first
-    deleteExpiredSegmentLockFiles(carbonTable)
     if (isLoadDeletionRequired(carbonTable.getMetaDataFilepath)) {
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
@@ -475,6 +437,8 @@ object DataLoadingUtil {
         }
       }
     }
+    // delete the expired segment lock files
+    CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable)
   }
 
   private def isUpdationRequired(isForceDeletion: Boolean,

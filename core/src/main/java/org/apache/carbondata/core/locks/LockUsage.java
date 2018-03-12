@@ -22,7 +22,6 @@ package org.apache.carbondata.core.locks;
  * Each enum value is one specific lock case.
  */
 public class LockUsage {
-  public static final String LOCK_DIR = "LockFiles";
   public static final String LOCK = ".lock";
   public static final String METADATA_LOCK = "meta.lock";
   public static final String COMPACTION_LOCK = "compaction.lock";

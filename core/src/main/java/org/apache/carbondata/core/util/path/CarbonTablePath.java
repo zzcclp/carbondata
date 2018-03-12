@@ -24,7 +24,6 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
-
 import org.apache.hadoop.fs.Path;
 
 
@@ -44,6 +43,7 @@ public class CarbonTablePath extends Path {
   private static final String PARTITION_PREFIX = "Part";
   private static final String DATA_PART_PREFIX = "part-";
   private static final String BATCH_PREFIX = "_batchno";
+  private static final String LOCK_DIR = "LockFiles";
 
   public static final String CARBON_DATA_EXT = ".carbondata";
   public static final String INDEX_FILE_EXT = ".carbonindex";
@@ -763,4 +763,10 @@ public class CarbonTablePath extends Path {
     return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + "segments";
   }
 
+  /**
+   * Get the lock files directory
+   */
+  public static String getLockFilesDirPath(String tablePath) {
+    return tablePath + CarbonCommonConstants.FILE_SEPARATOR + LOCK_DIR;
+  }
 }

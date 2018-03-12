@@ -19,8 +19,16 @@ package org.apache.carbondata.core.locks;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * This class contains all carbon lock utilities
@@ -107,4 +115,37 @@ public class CarbonLockUtil {
     }
   }
 
+  /**
+   * Currently the segment lock files are not deleted immediately when unlock,
+   * so it needs to delete expired lock files before delete loads.
+   */
+  public static void deleteExpiredSegmentLockFiles(CarbonTable carbonTable) {
+    LoadMetadataDetails[] details =
+        SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath());
+    if (details != null && details.length > 0) {
+      AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
+      long segmentLockFilesPreservTime =
+          CarbonProperties.getInstance().getSegmentLockFilesPreserveHours();
+      long currTime = System.currentTimeMillis();
+      for (LoadMetadataDetails oneRow : details) {
+        if (oneRow.getVisibility().equalsIgnoreCase("false") ||
+            SegmentStatus.SUCCESS == oneRow.getSegmentStatus() ||
+            SegmentStatus.LOAD_FAILURE == oneRow.getSegmentStatus() ||
+            SegmentStatus.LOAD_PARTIAL_SUCCESS == oneRow.getSegmentStatus() ||
+            SegmentStatus.COMPACTED == oneRow.getSegmentStatus()) {
+          String location = CarbonTablePath
+              .getLockFilesDirPath(absoluteTableIdentifier.getTablePath()) +
+              CarbonCommonConstants.FILE_SEPARATOR +
+              CarbonTablePath.addSegmentPrefix(oneRow.getLoadName()) + LockUsage.LOCK;
+          CarbonFile carbonFile =
+              FileFactory.getCarbonFile(location, FileFactory.getFileType(location));
+          if (carbonFile.exists()) {
+            if ((currTime - carbonFile.getLastModifiedTime()) > segmentLockFilesPreservTime) {
+              carbonFile.delete();
+            }
+          }
+        }
+      }
+    }
+  }
 }
