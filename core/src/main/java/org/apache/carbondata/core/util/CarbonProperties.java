@@ -1372,7 +1372,7 @@ public final class CarbonProperties {
 
   /**
    * Get the number of hours the segment lock files will be preserved.
-   * It will be converted to millseconds to return.
+   * It will be converted to microseconds to return.
    */
   public long getSegmentLockFilesPreserveHours() {
     long preserveSeconds;

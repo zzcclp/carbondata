@@ -22,7 +22,6 @@ import java.io.IOException;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -53,8 +52,7 @@ public class HdfsFileLock extends AbstractCarbonLock {
    */
   public HdfsFileLock(String lockFileLocation, String lockFile) {
     this.lockFileDir = CarbonTablePath.getLockFilesDirPath(lockFileLocation);
-    this.lockFilePath = this.lockFileDir
-        + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
+    this.lockFilePath = CarbonTablePath.getLockFilePath(lockFileLocation, lockFileLocation);
     LOGGER.info("HDFS lock path:" + this.lockFilePath);
     initRetry();
   }
@@ -81,10 +79,10 @@ public class HdfsFileLock extends AbstractCarbonLock {
   @Override public boolean lock() {
     try {
       if (null != this.lockFileDir &&
-          !FileFactory.isFileExist(lockFileDir, FileFactory.getFileType(lockFileDir))) {
+          !FileFactory.isFileExist(lockFileDir)) {
         FileFactory.mkdirs(lockFileDir, FileFactory.getFileType(lockFileDir));
       }
-      if (!FileFactory.isFileExist(lockFilePath, FileFactory.getFileType(lockFilePath))) {
+      if (!FileFactory.isFileExist(lockFilePath)) {
         FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(lockFilePath));
       }
       dataOutputStream = FileFactory.getDataOutputStreamUsingAppend(lockFilePath,
