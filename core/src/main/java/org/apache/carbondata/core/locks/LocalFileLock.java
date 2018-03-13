@@ -42,7 +42,7 @@ public class LocalFileLock extends AbstractCarbonLock {
   /**
    * lockFileDir is the directory of the lock file.
    */
-  private  String lockFileDir;
+  private String lockFileDir;
 
   /**
    * fileOutputStream of the local lock file

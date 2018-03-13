@@ -52,7 +52,7 @@ public class HdfsFileLock extends AbstractCarbonLock {
    */
   public HdfsFileLock(String lockFileLocation, String lockFile) {
     this.lockFileDir = CarbonTablePath.getLockFilesDirPath(lockFileLocation);
-    this.lockFilePath = CarbonTablePath.getLockFilePath(lockFileLocation, lockFileLocation);
+    this.lockFilePath = CarbonTablePath.getLockFilePath(lockFileLocation, lockFile);
     LOGGER.info("HDFS lock path:" + this.lockFilePath);
     initRetry();
   }
