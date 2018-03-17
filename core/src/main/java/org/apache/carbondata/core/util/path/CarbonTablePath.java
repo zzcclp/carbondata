@@ -786,4 +786,11 @@ public class CarbonTablePath extends Path {
     return getLockFilesDirPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR +
         addSegmentPrefix(loadName) + LockUsage.LOCK;
   }
+
+  /**
+   * return true if this lock file is a segment lock file otherwise false.
+   */
+  public static boolean isSegmentLockFilePath(String lockFileName) {
+    return lockFileName.startsWith(SEGMENT_PREFIX) && lockFileName.endsWith(LockUsage.LOCK);
+  }
 }
