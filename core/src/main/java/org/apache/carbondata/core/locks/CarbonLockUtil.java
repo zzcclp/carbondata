@@ -117,8 +117,8 @@ public class CarbonLockUtil {
    * so it needs to delete expired lock files before delete loads.
    */
   public static void deleteExpiredSegmentLockFiles(CarbonTable carbonTable) {
-    long currTime = System.currentTimeMillis();
-    long segmentLockFilesPreservTime =
+    final long currTime = System.currentTimeMillis();
+    final long segmentLockFilesPreservTime =
         CarbonProperties.getInstance().getSegmentLockFilesPreserveHours();
     AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
     String lockFilesDir = CarbonTablePath
@@ -126,15 +126,16 @@ public class CarbonLockUtil {
     CarbonFile[] files = FileFactory.getCarbonFile(lockFilesDir)
         .listFiles(new CarbonFileFilter() {
 
-      @Override public boolean accept(CarbonFile pathName) {
-        if (CarbonTablePath.isSegmentLockFilePath(pathName.getName())) {
-          if ((currTime - pathName.getLastModifiedTime()) > segmentLockFilesPreservTime) {
-            return true;
-          }
+            @Override public boolean accept(CarbonFile pathName) {
+              if (CarbonTablePath.isSegmentLockFilePath(pathName.getName())) {
+                if ((currTime - pathName.getLastModifiedTime()) > segmentLockFilesPreservTime) {
+                  return true;
+                }
+              }
+              return false;
+            }
         }
-        return false;
-      }
-    });
+    );
 
     for (CarbonFile file : files) {
       file.delete();
