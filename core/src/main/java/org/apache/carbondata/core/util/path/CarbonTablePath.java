@@ -40,6 +40,7 @@ public class CarbonTablePath extends Path {
   private static final String SORT_INDEX_EXT = ".sortindex";
   private static final String SCHEMA_FILE = "schema";
   public static final String TABLE_STATUS_FILE = "tablestatus";
+  public static final String TABLE_STATUS_HISTORY_FILE = "tablestatus.history";
   private static final String FACT_DIR = "Fact";
   private static final String SEGMENT_PREFIX = "Segment_";
   private static final String PARTITION_PREFIX = "Part";
@@ -792,5 +793,13 @@ public class CarbonTablePath extends Path {
    */
   public static boolean isSegmentLockFilePath(String lockFileName) {
     return lockFileName.startsWith(SEGMENT_PREFIX) && lockFileName.endsWith(LockUsage.LOCK);
+  }
+
+  /**
+   * Return table status history file path based on `tablePath`
+   */
+  public static String getTableStatusHistoryFilePath(String tablePath) {
+    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR
+        + TABLE_STATUS_HISTORY_FILE;
   }
 }
