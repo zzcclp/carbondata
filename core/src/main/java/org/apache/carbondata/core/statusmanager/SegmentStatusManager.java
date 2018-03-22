@@ -204,6 +204,22 @@ public class SegmentStatusManager {
     return readTableStatusFile(tableStatusFileName);
   }
 
+  /**
+   * This method reads the load metadata file
+   *
+   * @param metadataFolderPath
+   * @return
+   */
+  public static LoadMetadataDetails[] readLoadHistoryMetadata(String metadataFolderPath) {
+    String metadataFileName = metadataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+        + CarbonTablePath.TABLE_STATUS_HISTORY_FILE;
+    try {
+      return readTableStatusFile(metadataFileName);
+    } catch (IOException e) {
+      return new LoadMetadataDetails[0];
+    }
+  }
+
   public static LoadMetadataDetails[] readTableStatusFile(String tableStatusPath)
       throws IOException {
     Gson gsonObjectToRead = new Gson();
@@ -789,4 +805,99 @@ public class SegmentStatusManager {
     }
   }
 
+  /**
+   * Get the number of invisible segment info from segment info list.
+   */
+  public static int countInvisibleSegments(LoadMetadataDetails[] segmentList) {
+    int invisibleSegmentCnt = 0;
+    if (segmentList.length != 0) {
+      for (LoadMetadataDetails eachSeg : segmentList) {
+        // can not remove segment 0, there are some info will be used later
+        // for example: updateStatusFileName
+        if (!eachSeg.getLoadName().equalsIgnoreCase("0")
+            && eachSeg.getVisibility().equalsIgnoreCase("false")) {
+          invisibleSegmentCnt += 1;
+        }
+      }
+    }
+    return invisibleSegmentCnt;
+  }
+
+  public static class TableStatusReturnTuple {
+    LoadMetadataDetails[] arrayOfLoadDetails;
+    LoadMetadataDetails[] arrayOfLoadHistoryDetails;
+    TableStatusReturnTuple(LoadMetadataDetails[] arrayOfLoadDetails,
+        LoadMetadataDetails[] arrayOfLoadHistoryDetails) {
+      this.arrayOfLoadDetails = arrayOfLoadDetails;
+      this.arrayOfLoadHistoryDetails = arrayOfLoadHistoryDetails;
+    }
+
+    public LoadMetadataDetails[] getArrayOfLoadDetails() {
+      return arrayOfLoadDetails;
+    }
+
+    public LoadMetadataDetails[] getArrayOfLoadHistoryDetails() {
+      return arrayOfLoadHistoryDetails;
+    }
+  }
+
+  /**
+   * Separate visible and invisible segments into two array.
+   */
+  public static TableStatusReturnTuple separateVisibleAndInvisibleSegments(
+      LoadMetadataDetails[] oldList,
+      LoadMetadataDetails[] newList,
+      int invisibleSegmentCnt) {
+    int newSegmentsLength = newList.length;
+    int visibleSegmentCnt = newSegmentsLength - invisibleSegmentCnt;
+    LoadMetadataDetails[] arrayOfVisibleSegments = new LoadMetadataDetails[visibleSegmentCnt];
+    LoadMetadataDetails[] arrayOfInvisibleSegments = new LoadMetadataDetails[invisibleSegmentCnt];
+    int oldSegmentsLength = oldList.length;
+    int visibleIdx = 0;
+    int invisibleIdx = 0;
+    for (int i = 0; i < newSegmentsLength; i++) {
+      LoadMetadataDetails newSegment = newList[i];
+      if (i < oldSegmentsLength) {
+        LoadMetadataDetails oldSegment = oldList[i];
+        if (newSegment.getLoadName().equalsIgnoreCase("0")) {
+          newSegment.setVisibility(oldSegment.getVisibility());
+          arrayOfVisibleSegments[visibleIdx] = newSegment;
+          visibleIdx++;
+        } else if ("false".equalsIgnoreCase(oldSegment.getVisibility())) {
+          newSegment.setVisibility("false");
+          arrayOfInvisibleSegments[invisibleIdx] = newSegment;
+          invisibleIdx++;
+        } else {
+          arrayOfVisibleSegments[visibleIdx] = newSegment;
+          visibleIdx++;
+        }
+      } else {
+        arrayOfVisibleSegments[visibleIdx] = newSegment;
+        visibleIdx++;
+      }
+    }
+    return new TableStatusReturnTuple(arrayOfVisibleSegments, arrayOfInvisibleSegments);
+  }
+
+  /**
+   * Return an array containing all invisible segment entries in appendList and historyList.
+   */
+  public static LoadMetadataDetails[] appendLoadHistoryList(
+      LoadMetadataDetails[] historyList,
+      LoadMetadataDetails[] appendList) {
+    int historyListLen = historyList.length;
+    int appendListLen = appendList.length;
+    int newListLen = historyListLen + appendListLen;
+    LoadMetadataDetails[] newList = new LoadMetadataDetails[newListLen];
+    int newListIdx = 0;
+    for (int i = 0; i < historyListLen; i++) {
+      newList[newListIdx] = historyList[i];
+      newListIdx++;
+    }
+    for (int i = 0; i < appendListLen; i++) {
+      newList[newListIdx] = appendList[i];
+      newListIdx++;
+    }
+    return newList;
+  }
 }

@@ -50,6 +50,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
@@ -383,7 +384,6 @@ object DataLoadingUtil {
           carbonTable,
           absoluteTableIdentifier)
 
-
       if (updationRequired) {
         val carbonTableStatusLock =
           CarbonLockFactory.getCarbonLockObj(
@@ -391,7 +391,6 @@ object DataLoadingUtil {
             LockUsage.TABLE_STATUS_LOCK
           )
         var locked = false
-        var updationCompletionStaus = false
         try {
           // Update load metadate file after cleaning deleted nodes
           locked = carbonTableStatusLock.lockWithRetries()
@@ -410,11 +409,35 @@ object DataLoadingUtil {
             val latestMetadata = SegmentStatusManager
               .readLoadMetadata(carbonTable.getMetaDataFilepath)
 
-            // update the metadata details from old to new status.
-            val latestStatus = CarbonLoaderUtil
-              .updateLoadMetadataFromOldToNew(details, latestMetadata)
+            val invisibleSegmentPreserveCnt =
+              CarbonProperties.getInstance.getInvisibleSegmentPreserveCount()
+            val invisibleSegmentCnt = SegmentStatusManager.countInvisibleSegments(details)
+            // if execute command 'clean files' or the number of invisible segment info
+            // exceeds the value of 'carbon.invisible.segments.preserve.count',
+            // it need to append the invisible segment list to 'tablestatus.history' file.
+            if (isForceDeletion || (invisibleSegmentCnt > invisibleSegmentPreserveCnt)) {
+              val tableStatusReturn = SegmentStatusManager.separateVisibleAndInvisibleSegments(
+                  details, latestMetadata, invisibleSegmentCnt)
+              val oldLoadHistoryList = SegmentStatusManager.readLoadHistoryMetadata(
+                  carbonTable.getMetaDataFilepath)
+              val newLoadHistoryList = SegmentStatusManager.appendLoadHistoryList(
+                  oldLoadHistoryList, tableStatusReturn.getArrayOfLoadHistoryDetails())
+              SegmentStatusManager.writeLoadDetailsIntoFile(
+                  CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath),
+                  tableStatusReturn.getArrayOfLoadDetails())
+              SegmentStatusManager.writeLoadDetailsIntoFile(
+                  CarbonTablePath.getTableStatusHistoryFilePath(carbonTable.getTablePath),
+                  newLoadHistoryList)
+            } else {
+              // update the metadata details from old to new status.
+              val latestStatus = CarbonLoaderUtil
+                .updateLoadMetadataFromOldToNew(details, latestMetadata)
+              CarbonLoaderUtil.writeLoadMetadata(absoluteTableIdentifier, latestStatus)
+            }
 
-            CarbonLoaderUtil.writeLoadMetadata(absoluteTableIdentifier, latestStatus)
+            DeleteLoadFolders
+              .physicalFactAndMeasureMetadataDeletion(absoluteTableIdentifier,
+                 carbonTable.getMetaDataFilepath, isForceDeletion, specs)
           } else {
             val dbName = absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName
             val tableName = absoluteTableIdentifier.getCarbonTableIdentifier.getTableName
@@ -426,16 +449,10 @@ object DataLoadingUtil {
             LOGGER.error(errorMsg)
             throw new Exception(errorMsg + " Please try after some time.")
           }
-          updationCompletionStaus = true
         } finally {
           if (locked) {
             CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK)
           }
-        }
-        if (updationCompletionStaus) {
-          DeleteLoadFolders
-            .physicalFactAndMeasureMetadataDeletion(absoluteTableIdentifier,
-              carbonTable.getMetaDataFilepath, isForceDeletion, specs)
         }
       }
     }
