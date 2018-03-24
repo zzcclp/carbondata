@@ -419,10 +419,10 @@ object DataLoadingUtil {
               val oldLoadHistoryList = SegmentStatusManager.readLoadHistoryMetadata(
                   carbonTable.getMetaDataFilepath)
               val newLoadHistoryList = SegmentStatusManager.appendLoadHistoryList(
-                  oldLoadHistoryList, tableStatusReturn.arrayOfLoadHistoryDetails)
+                  oldLoadHistoryList, tableStatusReturn.getArrayOfLoadHistoryDetails())
               SegmentStatusManager.writeLoadDetailsIntoFile(
                   CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath),
-                  tableStatusReturn.arrayOfLoadDetails)
+                  tableStatusReturn.getArrayOfLoadDetails())
               SegmentStatusManager.writeLoadDetailsIntoFile(
                   CarbonTablePath.getTableStatusHistoryFilePath(carbonTable.getTablePath),
                   newLoadHistoryList)

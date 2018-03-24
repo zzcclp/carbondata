@@ -812,8 +812,10 @@ public class SegmentStatusManager {
     int invisibleSegmentCnt = 0;
     if (segmentList.length != 0) {
       for (LoadMetadataDetails eachSeg : segmentList) {
-        // file name stored in 0th segment.
-        if (eachSeg.getVisibility().equalsIgnoreCase("false")) {
+        // can not remove segment 0, there are some info will be used later
+        // for example: updateStatusFileName
+        if (!eachSeg.getLoadName().equalsIgnoreCase("0")
+            && eachSeg.getVisibility().equalsIgnoreCase("false")) {
           invisibleSegmentCnt += 1;
         }
       }
@@ -822,12 +824,20 @@ public class SegmentStatusManager {
   }
 
   public static class TableStatusReturnTuple {
-    public LoadMetadataDetails[] arrayOfLoadDetails;
-    public LoadMetadataDetails[] arrayOfLoadHistoryDetails;
+    LoadMetadataDetails[] arrayOfLoadDetails;
+    LoadMetadataDetails[] arrayOfLoadHistoryDetails;
     TableStatusReturnTuple(LoadMetadataDetails[] arrayOfLoadDetails,
         LoadMetadataDetails[] arrayOfLoadHistoryDetails) {
       this.arrayOfLoadDetails = arrayOfLoadDetails;
       this.arrayOfLoadHistoryDetails = arrayOfLoadHistoryDetails;
+    }
+
+    public LoadMetadataDetails[] getArrayOfLoadDetails() {
+      return arrayOfLoadDetails;
+    }
+
+    public LoadMetadataDetails[] getArrayOfLoadHistoryDetails() {
+      return arrayOfLoadHistoryDetails;
     }
   }
 
@@ -847,12 +857,13 @@ public class SegmentStatusManager {
     int invisibleIdx = 0;
     for (int i = 0; i < newSegmentsLength; i++) {
       LoadMetadataDetails newSegment = newList[i];
-      if (i >= oldSegmentsLength) {
-        arrayOfVisibleSegments[visibleIdx] = newSegment;
-        visibleIdx++;
-      } else {
+      if (i < oldSegmentsLength) {
         LoadMetadataDetails oldSegment = oldList[i];
-        if ("false".equalsIgnoreCase(oldSegment.getVisibility())) {
+        if (newSegment.getLoadName().equalsIgnoreCase("0")) {
+          newSegment.setVisibility(oldSegment.getVisibility());
+          arrayOfVisibleSegments[visibleIdx] = newSegment;
+          visibleIdx++;
+        } else if ("false".equalsIgnoreCase(oldSegment.getVisibility())) {
           newSegment.setVisibility("false");
           arrayOfInvisibleSegments[invisibleIdx] = newSegment;
           invisibleIdx++;
@@ -860,13 +871,16 @@ public class SegmentStatusManager {
           arrayOfVisibleSegments[visibleIdx] = newSegment;
           visibleIdx++;
         }
+      } else {
+        arrayOfVisibleSegments[visibleIdx] = newSegment;
+        visibleIdx++;
       }
     }
     return new TableStatusReturnTuple(arrayOfVisibleSegments, arrayOfInvisibleSegments);
   }
 
   /**
-   * Append new invisible segment info to old list.
+   * Return an array containing all invisible segment entries in appendList and historyList.
    */
   public static LoadMetadataDetails[] appendLoadHistoryList(
       LoadMetadataDetails[] historyList,
