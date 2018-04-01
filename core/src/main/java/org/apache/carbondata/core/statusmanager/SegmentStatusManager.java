@@ -256,12 +256,12 @@ public class SegmentStatusManager {
   }
 
   /**
-   * This method will create new segment id
+   * This method will get the max segment id
    *
    * @param loadMetadataDetails
    * @return
    */
-  public static int createNewSegmentId(LoadMetadataDetails[] loadMetadataDetails) {
+  public static int getMaxSegmentId(LoadMetadataDetails[] loadMetadataDetails) {
     int newSegmentId = -1;
     for (int i = 0; i < loadMetadataDetails.length; i++) {
       try {
@@ -285,6 +285,17 @@ public class SegmentStatusManager {
         }
       }
     }
+    return newSegmentId;
+  }
+
+  /**
+   * This method will create new segment id
+   *
+   * @param loadMetadataDetails
+   * @return
+   */
+  public static int createNewSegmentId(LoadMetadataDetails[] loadMetadataDetails) {
+    int newSegmentId = getMaxSegmentId(loadMetadataDetails);
     newSegmentId++;
     return newSegmentId;
   }
@@ -808,13 +819,15 @@ public class SegmentStatusManager {
   /**
    * Get the number of invisible segment info from segment info list.
    */
-  public static int countInvisibleSegments(LoadMetadataDetails[] segmentList) {
+  public static int countInvisibleSegments(
+      LoadMetadataDetails[] segmentList, int maxSegmentId) {
     int invisibleSegmentCnt = 0;
     if (segmentList.length != 0) {
       for (LoadMetadataDetails eachSeg : segmentList) {
         // can not remove segment 0, there are some info will be used later
         // for example: updateStatusFileName
         if (!eachSeg.getLoadName().equalsIgnoreCase("0")
+            && !eachSeg.getLoadName().equalsIgnoreCase(String.valueOf(maxSegmentId))
             && eachSeg.getVisibility().equalsIgnoreCase("false")) {
           invisibleSegmentCnt += 1;
         }
@@ -847,7 +860,8 @@ public class SegmentStatusManager {
   public static TableStatusReturnTuple separateVisibleAndInvisibleSegments(
       LoadMetadataDetails[] oldList,
       LoadMetadataDetails[] newList,
-      int invisibleSegmentCnt) {
+      int invisibleSegmentCnt,
+      int maxSegmentId) {
     int newSegmentsLength = newList.length;
     int visibleSegmentCnt = newSegmentsLength - invisibleSegmentCnt;
     LoadMetadataDetails[] arrayOfVisibleSegments = new LoadMetadataDetails[visibleSegmentCnt];
@@ -859,7 +873,8 @@ public class SegmentStatusManager {
       LoadMetadataDetails newSegment = newList[i];
       if (i < oldSegmentsLength) {
         LoadMetadataDetails oldSegment = oldList[i];
-        if (newSegment.getLoadName().equalsIgnoreCase("0")) {
+        if (newSegment.getLoadName().equalsIgnoreCase("0")
+            || newSegment.getLoadName().equalsIgnoreCase(String.valueOf(maxSegmentId))) {
           newSegment.setVisibility(oldSegment.getVisibility());
           arrayOfVisibleSegments[visibleIdx] = newSegment;
           visibleIdx++;

@@ -411,13 +411,16 @@ object DataLoadingUtil {
 
             val invisibleSegmentPreserveCnt =
               CarbonProperties.getInstance.getInvisibleSegmentPreserveCount()
-            val invisibleSegmentCnt = SegmentStatusManager.countInvisibleSegments(details)
+            val maxSegmentId = SegmentStatusManager.getMaxSegmentId(details)
+            val invisibleSegmentCnt = SegmentStatusManager.countInvisibleSegments(
+                details, maxSegmentId)
+            var newAddedLoadHistoryList = new Array[LoadMetadataDetails](0)
             // if execute command 'clean files' or the number of invisible segment info
             // exceeds the value of 'carbon.invisible.segments.preserve.count',
             // it need to append the invisible segment list to 'tablestatus.history' file.
             if (isForceDeletion || (invisibleSegmentCnt > invisibleSegmentPreserveCnt)) {
               val tableStatusReturn = SegmentStatusManager.separateVisibleAndInvisibleSegments(
-                  details, latestMetadata, invisibleSegmentCnt)
+                  details, latestMetadata, invisibleSegmentCnt, maxSegmentId)
               val oldLoadHistoryList = SegmentStatusManager.readLoadHistoryMetadata(
                   carbonTable.getMetaDataFilepath)
               val newLoadHistoryList = SegmentStatusManager.appendLoadHistoryList(
@@ -428,6 +431,8 @@ object DataLoadingUtil {
               SegmentStatusManager.writeLoadDetailsIntoFile(
                   CarbonTablePath.getTableStatusHistoryFilePath(carbonTable.getTablePath),
                   newLoadHistoryList)
+              // the segments which will be moved to history file need to be deleted
+              newAddedLoadHistoryList = tableStatusReturn.getArrayOfLoadHistoryDetails()
             } else {
               // update the metadata details from old to new status.
               val latestStatus = CarbonLoaderUtil
@@ -437,7 +442,7 @@ object DataLoadingUtil {
 
             DeleteLoadFolders
               .physicalFactAndMeasureMetadataDeletion(absoluteTableIdentifier,
-                 carbonTable.getMetaDataFilepath, isForceDeletion, specs)
+                 carbonTable.getMetaDataFilepath, newAddedLoadHistoryList, isForceDeletion, specs)
           } else {
             val dbName = absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName
             val tableName = absoluteTableIdentifier.getCarbonTableIdentifier.getTableName
