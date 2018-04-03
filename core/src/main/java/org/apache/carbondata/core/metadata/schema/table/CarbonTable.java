@@ -424,6 +424,13 @@ public class CarbonTable implements Serializable {
   }
 
   /**
+   * @return the metaDataFilepath
+   */
+  public String getMetadataPath() {
+    return CarbonTablePath.getMetadataPath(getTablePath());
+  }
+
+  /**
    * @return storepath
    */
   public String getTablePath() {

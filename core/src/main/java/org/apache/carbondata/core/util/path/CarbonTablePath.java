@@ -819,4 +819,14 @@ public class CarbonTablePath extends Path {
     return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR
         + TABLE_STATUS_HISTORY_FILE;
   }
+
+  public static String getStreamingLogDir(String tablePath) {
+    return tablePath + CarbonCommonConstants.FILE_SEPARATOR + STREAMING_DIR +
+        CarbonCommonConstants.FILE_SEPARATOR + STREAMING_LOG_DIR;
+  }
+
+  public static String getStreamingCheckpointDir(String tablePath) {
+    return tablePath + CarbonCommonConstants.FILE_SEPARATOR + STREAMING_DIR +
+        CarbonCommonConstants.FILE_SEPARATOR + STREAMING_CHECKPOINT_DIR;
+  }
 }
