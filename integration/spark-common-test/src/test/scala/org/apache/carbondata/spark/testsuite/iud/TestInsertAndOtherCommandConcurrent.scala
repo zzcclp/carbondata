@@ -203,19 +203,13 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     // number of segment is 2 after insert
     sql("insert into table t1 select * from orders_overwrite")
 
-    sql(
-      s"""
-         | create datamap dm_t1 on table t1
-         | using '${classOf[WaitingDataMap].getName}'
-         | as select count(a) from hiveMetaStoreTable_1")
-       """.stripMargin)
     val future = runSqlAsync("insert into table t1 select * from orders_overwrite")
     sql("alter table t1 compact 'MAJOR'")
     assert(future.get.contains("PASS"))
 
     // all segments are compacted
     val segments = sql("show segments for table t1").collect()
-    assert(segments.length == 5)
+    assert(segments.length == 4)
 
     sql("drop table t1")
   }
