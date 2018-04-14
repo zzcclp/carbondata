@@ -83,7 +83,10 @@ public abstract class AbstractDimensionDataChunk implements DimensionColumnDataC
    * below method will be used to free the allocated memory
    */
   @Override public void freeMemory() {
-    dataChunkStore.freeMemory();
+    if (dataChunkStore != null) {
+      dataChunkStore.freeMemory();
+      dataChunkStore = null;
+    }
   }
 
   /**

@@ -553,6 +553,7 @@ public abstract class AbstractScannedResult {
           for (int j = 0; j < dimensionDataChunks[i].length; j++) {
             if (null != dimensionDataChunks[i][j]) {
               dimensionDataChunks[i][j].freeMemory();
+              dimensionDataChunks[i][j] = null;
             }
           }
         }
@@ -565,6 +566,7 @@ public abstract class AbstractScannedResult {
           for (int j = 0; j < measureDataChunks[i].length; j++) {
             if (null != measureDataChunks[i][j]) {
               measureDataChunks[i][j].freeMemory();
+              measureDataChunks[i][j] = null;
             }
           }
         }
@@ -575,6 +577,7 @@ public abstract class AbstractScannedResult {
       for (int i = 0; i < dimRawColumnChunks.length; i++) {
         if (null != dimRawColumnChunks[i]) {
           dimRawColumnChunks[i].freeMemory();
+          dimRawColumnChunks[i] = null;
         }
       }
     }

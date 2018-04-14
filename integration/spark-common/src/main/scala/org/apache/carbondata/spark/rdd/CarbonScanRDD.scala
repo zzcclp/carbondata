@@ -343,7 +343,7 @@ class CarbonScanRDD(
     val iterator = if (inputSplit.getAllSplits.size() > 0) {
       val model = format.getQueryModel(inputSplit, attemptContext)
       // get RecordReader by FileFormat
-      val reader: RecordReader[Void, Object] = inputSplit.getFileFormat match {
+      var reader: RecordReader[Void, Object] = inputSplit.getFileFormat match {
         case FileFormat.ROW_V1 =>
           // create record reader for row format
           DataTypeUtil.setDataTypeConverter(new SparkDataTypeConverterImpl)
@@ -373,11 +373,23 @@ class CarbonScanRDD(
           }
       }
 
+      val closeReader = () => {
+        if (reader != null) {
+          try {
+            reader.close()
+          } catch {
+            case e: Exception =>
+              LOGGER.error(e)
+          }
+          reader = null
+        }
+      }
+
       // add task completion before calling initialize as initialize method will internally call
       // for usage of unsafe method for processing of one blocklet and if there is any exception
       // while doing that the unsafe memory occupied for that task will not get cleared
       context.addTaskCompletionListener { _ =>
-        reader.close()
+        closeReader.apply()
         close()
         logStatistics(queryStartTime, model.getStatisticsRecorder)
       }
@@ -395,6 +407,9 @@ class CarbonScanRDD(
           if (!finished && !havePair) {
             finished = !reader.nextKeyValue
             havePair = !finished
+          }
+          if (finished) {
+            closeReader.apply()
           }
           !finished
         }
@@ -416,7 +431,6 @@ class CarbonScanRDD(
         override def next(): Any = throw new java.util.NoSuchElementException("End of stream")
       }
     }
-
 
     iterator.asInstanceOf[Iterator[InternalRow]]
   }
@@ -556,4 +570,5 @@ class CarbonScanRDD(
   def setVectorReaderSupport(boolean: Boolean): Unit = {
     vectorReader = boolean
   }
+
 }
