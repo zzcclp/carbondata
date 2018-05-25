@@ -100,6 +100,21 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
     }
   }
 
+  public void forceCloseWriter() {
+    if (close) {
+      // already might be closed forcefully
+      return;
+    }
+    try {
+      // unblock the queue.put on the other thread and clear the queue.
+      queue.clear();
+      close = true;
+      return;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   private static class RowBatch extends CarbonIterator<Object[]> {
 
     private int counter;
