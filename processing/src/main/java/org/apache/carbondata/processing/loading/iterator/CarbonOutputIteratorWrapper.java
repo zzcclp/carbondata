@@ -47,6 +47,10 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
   private ArrayBlockingQueue<RowBatch> queue = new ArrayBlockingQueue<>(10);
 
   public void write(Object[] row) throws InterruptedException {
+    if (close) {
+      // already might be closed forcefully
+      return;
+    }
     if (!loadBatch.addRow(row)) {
       loadBatch.readyRead();
       queue.put(loadBatch);
@@ -83,7 +87,21 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
   }
 
   public void closeWriter() {
+    this.closeWriter(false);
+  }
+
+  public void closeWriter(boolean isForceClose) {
+    if (close) {
+      // already might be closed forcefully
+      return;
+    }
     try {
+      if (isForceClose) {
+        // unblock the queue.put on the other thread and clear the queue.
+        queue.clear();
+        close = true;
+        return;
+      }
       loadBatch.readyRead();
       if (loadBatch.size > 0) {
         queue.put(loadBatch);
@@ -97,21 +115,6 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
       if (!queue.offer(new RowBatch(0))) {
         LOG.warn("The default last element is not added to queue");
       }
-    }
-  }
-
-  public void forceCloseWriter() {
-    if (close) {
-      // already might be closed forcefully
-      return;
-    }
-    try {
-      // unblock the queue.put on the other thread and clear the queue.
-      queue.clear();
-      close = true;
-      return;
-    } catch (Exception e) {
-      throw new RuntimeException(e);
     }
   }
 

@@ -239,7 +239,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
     final CarbonOutputIteratorWrapper iteratorWrapper = new CarbonOutputIteratorWrapper();
     final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();
-    ExecutorService executorService = Executors.newFixedThreadPool(1,
+    final ExecutorService executorService = Executors.newFixedThreadPool(1,
         new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName()));;
     // It should be started in new thread as the underlying iterator uses blocking queue.
     Future future = executorService.submit(new Thread() {
@@ -249,7 +249,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
               .execute(loadModel, tempStoreLocations, new CarbonIterator[] { iteratorWrapper });
         } catch (Exception e) {
           executorService.shutdownNow();
-          iteratorWrapper.forceCloseWriter();
+          iteratorWrapper.closeWriter(true);
           dataLoadExecutor.close();
           // clean up the folders and files created locally for data load operation
           TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
@@ -416,7 +416,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
         // clean up the folders and files created locally for data load operation
         TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
       }
-      LOG.info("Closed partition writer task " + taskAttemptContext.getTaskAttemptID());
+      LOG.info("Closed writer task " + taskAttemptContext.getTaskAttemptID());
     }
 
     public CarbonLoadModel getLoadModel() {
