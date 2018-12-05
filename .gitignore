@@ -17,3 +17,12 @@ store/CSDK/cmake-build-debug/*
 .classpath
 metastore_db/
 derby.log
+
+*/.cache-main
+*/.cache-tests
+*/*/.cache-main
+*/*/.cache-tests
+*/*/*/.cache-main
+*/*/*/.cache-tests
+
+format/dev/

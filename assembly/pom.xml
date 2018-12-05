@@ -100,6 +100,9 @@
               <exclude>com.google.guava:guava</exclude>
               <exclude>org.xerial.snappy:snappy-java</exclude>
               <!--add more items to be excluded from the assembly-->
+              <exclude>com.amazonaws:*</exclude>
+              <exclude>org.slf4j:*</exclude>
+              <exclude>log4j:log4j</exclude>
             </excludes>
           </artifactSet>
           <filters>
